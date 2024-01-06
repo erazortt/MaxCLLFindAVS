@@ -6,7 +6,7 @@ The created textfile's name is "MaxCLLFind_Results0.txt". It will be overwritten
 
 ### Usage
 ```
-clip.MaxCLLFind()
+MaxCLLFind()
 ```
 Load in VirtualDub and click Play. After video is finished playing, close VirtualDub. The plugin also writes the Average FALL (frame average light level) into the text file. If you want this result to be accurate, make sure to not load any frame more than once.
 
@@ -14,23 +14,28 @@ This plugin only accepts RGB inputs. If your HDR clip isn't RGB, convert it firs
 
 For example, let's say you are loading a HDR HEVC YUV file, do this:
 ```
-clip = clip.ConvertToRGB64(matrix="Rec2020")
-clip.MaxCLLFind()
+ConvertToRGB64(matrix="Rec2020")
+MaxCLLFind()
 ```
 
+Additionally it is possible to downsize the stream to improve performance. This is especially advisable if single pixel brightness is not relevant. The resizing must however be done taking into account the special chroma location of HDR10 streams. This is best done using the function z_ConvertFormat of the [avsresize](http://avisynth.nl/index.php/Avsresize) library:
+```
+z_ConvertFormat(chromaloc_op="top_left=>center", width=width()/2, height=height()/2, pixel_type="RGBP16", colorspace_op="2020ncl:st2084:2020:limited=>rgb:st2084:2020:full", dither_type="none", resample_filter="bilinear", resample_filter_uv="bilinear")
+MaxCLLFind()
+```
 Supported are the packed RGB formats RGB24, RGB32, RGB48, RGB64 and the planar RGB formats RGBP8, RGBP10, RGBP12, RGBP14, RGBP16. It is not advisable to use the formats RGB24, RGB32 and RGBP8 for HDR clips. The planar formats are processed about 30% faster than the packed formats, however the default MaxFALL calculation is unsuppored for them.
 
 ### Alternate MaxFALL algorithm
 The default MaxFALL algorithm uses the SMPTE recommendation of averaging max(R,G,B) across all pixels, meaning the brightest channel of each pixel goes into the average. If you want the average of all channels of all pixels (not the official recommendation) instead, do this:
 ```
-clip.MaxCLLFind(maxFallAlgorithm=1)
+MaxCLLFind(maxFallAlgorithm=1)
 ```
 This is more for your own curiosity and might lead to playback problems like flickering if used as actual HDR metadata, since it typically leads to typically slightly lower average intensity readings and if the TV bases its own dimming on the official recommendation, it might dim the image when it reaches a higher FALL than your calculated MaxFALL, which will almost certainly happen. 
 
 The official MaxFALL algorithm is not supported by the planar formats. If your input is planar either disable the MaxFALL calculation or use the unofficial algorithm or convert your clip to a packed format like RGB48. The MaxFALL calculation is disabled by:
 
 ```
-clip.MaxCLLFind(maxFallAlgorithm=-1)
+MaxCLLFind(maxFallAlgorithm=-1)
 ```
 
 ### Word of caution
